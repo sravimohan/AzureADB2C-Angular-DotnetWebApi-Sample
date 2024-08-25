@@ -19,4 +19,7 @@ https://learn.microsoft.com/en-us/azure/active-directory-b2c/enable-authenticati
 
 ## Samples in the repository
 - Angular SPA Front end
+https://github.com/sravimohan/AzureADB2C-Angular-DotnetWebApi-Sample/tree/main/TasksApi
+
 - Asp.net Web API Backend
+https://github.com/sravimohan/AzureADB2C-Angular-DotnetWebApi-Sample/tree/main/TasksApp
