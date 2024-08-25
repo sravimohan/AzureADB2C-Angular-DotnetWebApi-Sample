@@ -1,0 +1,17 @@
+<div class="mat-app-background">
+  <mat-toolbar class="toolbar">
+    <div class="cursor-pointer" routerLink="/">Tasks</div>
+    <div>
+      @if (account(); as acct) {
+      <div class="mr8">{{ acct.name }}</div>
+      } @else {
+      <button mat-icon-button (click)="login()">
+        <mat-icon>login</mat-icon>
+      </button>
+      }
+    </div>
+  </mat-toolbar>
+  <div class="overflow">
+    <router-outlet *ngIf="!isIframe"></router-outlet>
+  </div>
+</div>

@@ -1,0 +1,19 @@
+<mat-card class="container" appearance="outlined">
+  <mat-card-content>
+    <div class="action">
+      <mat-form-field class="example-full-width">
+        <mat-label>Add Task</mat-label>
+        <input matInput [(ngModel)]="newTask" placeholder="Ex. Get Pizza" />
+      </mat-form-field>
+      <button mat-raised-button color="primary" (click)="addTask()">
+        Add Task
+      </button>
+    </div>
+
+    <mat-list role="list">
+      @for (task of tasks; track task.description) {
+      <mat-list-item role="listitem">{{ task.description }}</mat-list-item>
+      } @empty { Empty list of tasks }
+    </mat-list>
+  </mat-card-content>
+</mat-card>

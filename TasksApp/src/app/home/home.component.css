@@ -1,0 +1,10 @@
+.container {
+  padding: 20px;
+}
+
+.action {
+  display: flex;
+  align-items: center;
+  justify-content: start;
+  gap: 10px;
+}
