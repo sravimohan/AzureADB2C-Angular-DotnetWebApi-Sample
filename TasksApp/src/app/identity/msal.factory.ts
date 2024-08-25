@@ -41,7 +41,7 @@ export class MsalFactory {
   public static MSALInterceptorConfigFactory(): MsalInterceptorConfiguration {
     const protectedResourceMap = new Map<string, string[]>();
     protectedResourceMap.set(environment.graph.uri, environment.graph.scopes);
-    protectedResourceMap.set('http://localhost:5250', ['api://tasks-api/tasks.read', 'api://tasks-api/tasks.write']);
+    protectedResourceMap.set(environment.tasks_api.uri, environment.tasks_api.scopes);
 
     return {
       interactionType: InteractionType.Redirect,
