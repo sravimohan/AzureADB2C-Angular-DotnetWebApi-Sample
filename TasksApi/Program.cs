@@ -37,8 +37,24 @@ builder.Services.Configure<OpenIdConnectOptions>(
 
 builder.Services.AddAuthorization(policies =>
 {
-    policies.AddPolicy(name: "read", policy => { policy.RequireRole("Task.Read"); });
-    policies.AddPolicy(name: "write", p => { p.RequireRole("Task.Write"); });
+    // Checks for the presence of the Task.Read role
+    // policies.AddPolicy(name: "read", policy =>
+    // {
+    //     policy.RequireRole("Task.Read"); 
+    // });
+
+    // Checks for the presence of the Task.Read role
+    policies.AddPolicy("read", policy =>
+    {
+        policy.RequireAssertion(context =>
+            context.User.IsInRole("Task.Read") ||
+            context.User.HasClaim(c => c is { Type: "scope", Value: "tasks.read" }));
+    });
+    
+    policies.AddPolicy(name: "write", p =>
+    {
+        p.RequireRole("Task.Write"); 
+    });
 });
 
 // End of the Microsoft Identity platform block 
