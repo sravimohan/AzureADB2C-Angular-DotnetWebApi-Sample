@@ -1,80 +1,47 @@
-﻿using System.Net.Http.Headers;
-using System.Text.Encodings.Web;
-using System.Text.Json;
-using Microsoft.Identity.Client;
-using Microsoft.Identity.Web;
+﻿using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Identity.Abstractions;
+using Microsoft.Identity.Web;
 
+using Microsoft.Extensions.Logging;
 
-// Full directory URL, in the form of https://login.microsoftonline.com/<tenant_id>
-const string authority = " https://login.microsoftonline.com/c512e30b-c327-43a9-9340-0d49119c380a";
+var tokenAcquirerFactory = TokenAcquirerFactory.GetDefaultInstance();
 
-// 'Enter the client ID obtained from the Microsoft Entra Admin Center
-const string clientId = "6215d839-188c-48a4-91d5-418ac654f9df";
+tokenAcquirerFactory.Services
+    .AddLogging((logBuilder) => logBuilder.SetMinimumLevel(LogLevel.Trace).AddConsole());
 
-// Client secret 'Value' (not its ID) from 'Client secrets' in the Microsoft Entra Admin Center
-const string clientSecret = "xxx";
+tokenAcquirerFactory.Services
+    .AddDownstreamApi("TaskApi", tokenAcquirerFactory.Configuration.GetSection("TaskApi"));
 
-// Client 'Object ID' of app registration in Microsoft Entra Admin Center - this value is a GUID
-const string clientObjectId = "84c96022-3bbd-4e10-bafb-aeb7a539f2e5";
+var serviceProvider = tokenAcquirerFactory.Build();
+var api = serviceProvider.GetRequiredService<IDownstreamApi>();
 
-// This app instance should be a long-lived instance because
-// it maintains the in-memory token cache.
-var msalClient = ConfidentialClientApplicationBuilder.Create(clientId)
-    .WithClientSecret(clientSecret)
-    .WithAuthority(new Uri(authority))
-    .Build();
+var tasks = await GetTasks();
+Console.WriteLine(string.Join("\n",tasks.Select(t => t.Description).ToArray()));
 
-msalClient.AddInMemoryTokenCache();
+var newTask = await AddTask();
+Console.WriteLine(newTask);
 
-var authenticationResult =
-    await msalClient.AcquireTokenForClient(["https://graph.microsoft.com/.default"]).ExecuteAsync();
+tasks = await GetTasks();
+Console.WriteLine(string.Join("\n",tasks.Select(t => t.Description).ToArray()));
 
-var jsonSerializerOptions = new JsonSerializerOptions
-    { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+return;
 
-// Get *this* application's application object from Microsoft Graph
-// await GetProfile();
-
-
-
-
-
-
-// Get tasks from the tasks API
-await GetTasks();
-
-async Task GetProfile()
+async Task<IEnumerable<Task>> GetTasks()
 {
-    var httpClient = new HttpClient();
-
-    using var graphRequest =
-        new HttpRequestMessage(method: HttpMethod.Get,
-            requestUri: $"https://graph.microsoft.com/v1.0/applications/{clientObjectId}");
-
-    graphRequest.Headers.Authorization =
-        new AuthenticationHeaderValue(scheme: "Bearer", parameter: authenticationResult.AccessToken);
-
-    var graphResponseMessage = await httpClient.SendAsync(graphRequest);
-    graphResponseMessage.EnsureSuccessStatusCode();
-
-    using var graphResponseJson = JsonDocument.Parse(await graphResponseMessage.Content.ReadAsStreamAsync());
-    Console.WriteLine(JsonSerializer.Serialize(value: graphResponseJson, options: jsonSerializerOptions));
+    var tasks = await api.GetForAppAsync<IEnumerable<Task>>("TaskApi");
+    return tasks!;
 }
 
-async Task GetTasks()
+async Task<Task> AddTask()
 {
-    var httpClient = new HttpClient();
-    using var request = new HttpRequestMessage(method: HttpMethod.Get, requestUri: "http://localhost:5250/tasks");
-    request.Headers.Authorization =
-        new AuthenticationHeaderValue(scheme: "Bearer", parameter: authenticationResult.AccessToken);
-    
-    Console.WriteLine(authenticationResult.AccessToken);
+    var task = await api.PostForAppAsync<Task, Task>("TaskApi", new Task("clean my office"), options =>
+    {
+        options.RelativePath = "/tasks";
+    });
 
-    var response = await httpClient.SendAsync(request);
-    response.EnsureSuccessStatusCode();
-
-    using var graphResponseJson = JsonDocument.Parse(await response.Content.ReadAsStreamAsync());
-    Console.WriteLine(JsonSerializer.Serialize(value: graphResponseJson, options: jsonSerializerOptions));
+    return task!;
 }
+
+
+internal record Task(string Description);
